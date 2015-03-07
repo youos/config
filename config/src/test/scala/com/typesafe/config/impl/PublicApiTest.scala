@@ -956,6 +956,7 @@ class PublicApiTest extends TestUtils {
 
     @Test
     def invalidateCaches() {
+        ConfigFactory.invalidateCaches()
         val conf0 = ConfigFactory.load()
         val sys0 = ConfigFactory.systemProperties()
         val conf1 = ConfigFactory.load()
@@ -1024,6 +1025,41 @@ class PublicApiTest extends TestUtils {
         assertEquals(42, conf.getInt("a"))
         intercept[ConfigException.NotResolved] {
             conf.getInt("b")
+        }
+    }
+
+    @Test
+    def inappropriateCachingIssue190(): Unit = {
+        // https://github.com/typesafehub/config/issues/190
+        withScratchDirectory("issue190") { dir =>
+            val x = new File(dir, "x.conf")
+            writeFile(x, "x = [{a: 1}]")
+            val local = new File(dir, "local.conf")
+            writeFile(local,
+                s"""
+include classpath("application")
+foo {
+    include "${x.getAbsolutePath}"
+}
+""")
+
+            def reload(): Config = {
+                ConfigFactory.invalidateCaches()
+                System.setProperty("config.file", local.getPath)
+                try ConfigFactory.load
+                finally System.clearProperty("config.file")
+            }
+
+            val initial = reload()
+            assertEquals(1, initial.getList("foo.x").size)
+
+            writeFile(x, "x = []")
+            val second = reload()
+            assertEquals(0, second.getList("foo.x").size)
+
+            writeFile(x, "")
+            val third = reload()
+            assertTrue("foo.x is gone", !third.hasPath("foo.x"))
         }
     }
 }
