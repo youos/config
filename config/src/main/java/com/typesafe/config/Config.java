@@ -6,6 +6,7 @@ package com.typesafe.config;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -441,7 +442,7 @@ public interface Config extends ConfigMergeable {
      * (OK, this is a slight lie: <code>Config</code> entries may contain
      * {@link ConfigList} and the lists may contain objects. But no objects are
      * directly included as entry values.)
-     * 
+     *
      * @return set of paths with non-null values, built up by recursing the
      *         entire tree of {@link ConfigObject} and creating an entry for
      *         each leaf value.
@@ -449,6 +450,8 @@ public interface Config extends ConfigMergeable {
     Set<Map.Entry<String, ConfigValue>> entrySet();
 
     /**
+     * Gets a boolean value, throwing if it is missing, null, or
+     * not convertible to boolean.
      *
      * @param path
      *            path expression
@@ -992,4 +995,21 @@ public interface Config extends ConfigMergeable {
      * @return the new instance with the new map entry
      */
     Config withValue(String path, ConfigValue value);
+
+    /**
+     * Gets a value which may be null; the returned {@link
+     * java.util.Optional} will be present only if the value was
+     * non-null. If the value isn't set to anything at all (not
+     * even null), or isn't convertible to the desired type, an
+     * exception will be thrown.
+     *
+     * @param path
+     *    path expression
+     * @return {@link java.util.Optional} with possible value
+     * @throws ConfigException.Missing
+     *             if value is absent entirely (rather than null)
+     * @throws ConfigException.WrongType
+     *             if value is not convertible to desired type
+     */
+    Optional<Boolean> getBooleanOrNull(String path);
 }

@@ -74,7 +74,7 @@ findbugsMaxMemory := 2000
 
 jacoco.settings
 
-javacOptions in (Compile, compile) ++= Seq("-source", "1.6", "-target", "1.8",
+javacOptions in (Compile, compile) ++= Seq("-source", "1.8", "-target", "1.8",
                                            "-g", "-Xlint:unchecked")
 
 // because we test some global state such as singleton caches,

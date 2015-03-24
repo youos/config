@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -123,6 +124,17 @@ final class SimpleConfig implements Config, MergeableValue, Serializable {
 
     static private AbstractConfigValue findKey(AbstractConfigObject self, String key,
             ConfigValueType expected, Path originalPath) {
+        AbstractConfigValue v = findKeyMaybeNull(self, key, expected, originalPath);
+
+        if (v.valueType() == ConfigValueType.NULL)
+            throw new ConfigException.Null(v.origin(), originalPath.render(),
+                    expected != null ? expected.name() : null);
+        else
+            return v;
+    }
+
+    static private AbstractConfigValue findKeyMaybeNull(AbstractConfigObject self, String key,
+                                                        ConfigValueType expected, Path originalPath) {
         AbstractConfigValue v = self.peekAssumingResolved(key, originalPath);
         if (v == null)
             throw new ConfigException.Missing(originalPath.render());
@@ -130,10 +142,8 @@ final class SimpleConfig implements Config, MergeableValue, Serializable {
         if (expected != null)
             v = DefaultTransformer.transform(v, expected);
 
-        if (v.valueType() == ConfigValueType.NULL)
-            throw new ConfigException.Null(v.origin(), originalPath.render(),
-                    expected != null ? expected.name() : null);
-        else if (expected != null && v.valueType() != expected)
+
+        if (expected != null && (v.valueType() != ConfigValueType.NULL && v.valueType() != expected))
             throw new ConfigException.WrongType(v.origin(), originalPath.render(), expected.name(),
                     v.valueType().name());
         else
@@ -166,6 +176,43 @@ final class SimpleConfig implements Config, MergeableValue, Serializable {
     AbstractConfigValue find(String pathExpression, ConfigValueType expected) {
         Path path = Path.newPath(pathExpression);
         return find(path, expected, path);
+    }
+
+    static private Optional<AbstractConfigValue> findKeyOptional(AbstractConfigObject self, String key,
+            ConfigValueType expected, Path originalPath) {
+        AbstractConfigValue v = findKeyMaybeNull(self, key, expected, originalPath);
+        if (v.valueType() == ConfigValueType.NULL)
+            return Optional.empty();
+        else
+            return Optional.of(v);
+    }
+
+    static private Optional<AbstractConfigValue> findOptional(AbstractConfigObject self, Path path,
+            ConfigValueType expected, Path originalPath) {
+        try {
+            String key = path.first();
+            Path next = path.remainder();
+            if (next == null) {
+                return findKeyOptional(self, key, expected, originalPath);
+            } else {
+                Optional<AbstractConfigObject> oOpt = findKeyOptional(self, key,
+                                                                   ConfigValueType.OBJECT,
+                                                                   originalPath.subPath(0, originalPath.length() - next.length())).map(v -> (AbstractConfigObject) v);
+                assert (oOpt != null); // missing was supposed to throw
+                return oOpt.flatMap(o -> findOptional(o, next, expected, originalPath));
+            }
+        } catch (ConfigException.NotResolved e) {
+            throw ConfigImpl.improveNotResolved(path, e);
+        }
+    }
+
+    private Optional<AbstractConfigValue> findOptional(Path pathExpression, ConfigValueType expected, Path originalPath) {
+        return findOptional(object, pathExpression, expected, originalPath);
+    }
+
+    private Optional<AbstractConfigValue> findOptional(String pathExpression, ConfigValueType expected) {
+        Path path = Path.newPath(pathExpression);
+        return findOptional(path, expected, path);
     }
 
     @Override
@@ -991,4 +1038,10 @@ final class SimpleConfig implements Config, MergeableValue, Serializable {
     private Object writeReplace() throws ObjectStreamException {
         return new SerializedConfigValue(this);
     }
+
+    @Override
+    public Optional<Boolean> getBooleanOrNull(String path) {
+        return findOptional(path, ConfigValueType.BOOLEAN).map(v -> (Boolean) v.unwrapped());
+    }
+
 }
