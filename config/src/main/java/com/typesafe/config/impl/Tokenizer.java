@@ -572,6 +572,7 @@ final class Tokenizer {
                 }
             } while (true);
 
+
             return Tokens.newSubstitution(origin, optional, expression);
         }
 

@@ -74,5 +74,6 @@ class ComplexApp {
             System.out.println("when we passed a bad config to simple-lib, it said: "
                     + e.getMessage());
         }
+
     }
 }

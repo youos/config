@@ -30,9 +30,10 @@ final class SimpleConfigOrigin implements ConfigOrigin {
     final private String urlOrNull;
     final private String resourceOrNull;
     final private List<String> commentsOrNull;
+    final private String substitutionPathOrNull;
 
     protected SimpleConfigOrigin(String description, int lineNumber, int endLineNumber, OriginType originType,
-            String urlOrNull, String resourceOrNull, List<String> commentsOrNull) {
+            String urlOrNull, String resourceOrNull, List<String> commentsOrNull, String substitutionPath) {
         if (description == null)
             throw new ConfigException.BugOrBroken("description may not be null");
         this.description = description;
@@ -42,10 +43,11 @@ final class SimpleConfigOrigin implements ConfigOrigin {
         this.urlOrNull = urlOrNull;
         this.resourceOrNull = resourceOrNull;
         this.commentsOrNull = commentsOrNull;
+        this.substitutionPathOrNull = substitutionPath;
     }
 
     static SimpleConfigOrigin newSimple(String description) {
-        return new SimpleConfigOrigin(description, -1, -1, OriginType.GENERIC, null, null, null);
+        return new SimpleConfigOrigin(description, -1, -1, OriginType.GENERIC, null, null, null, null);
     }
 
     static SimpleConfigOrigin newFile(String filename) {
@@ -55,12 +57,12 @@ final class SimpleConfigOrigin implements ConfigOrigin {
         } catch (MalformedURLException e) {
             url = null;
         }
-        return new SimpleConfigOrigin(filename, -1, -1, OriginType.FILE, url, null, null);
+        return new SimpleConfigOrigin(filename, -1, -1, OriginType.FILE, url, null, null, null);
     }
 
     static SimpleConfigOrigin newURL(URL url) {
         String u = url.toExternalForm();
-        return new SimpleConfigOrigin(u, -1, -1, OriginType.URL, u, null, null);
+        return new SimpleConfigOrigin(u, -1, -1, OriginType.URL, u, null, null, null);
     }
 
     static SimpleConfigOrigin newResource(String resource, URL url) {
@@ -70,7 +72,7 @@ final class SimpleConfigOrigin implements ConfigOrigin {
         else
             desc = resource;
         return new SimpleConfigOrigin(desc, -1, -1, OriginType.RESOURCE, url != null ? url.toExternalForm() : null,
-                resource, null);
+                resource, null, null);
     }
 
     static SimpleConfigOrigin newResource(String resource) {
@@ -83,13 +85,13 @@ final class SimpleConfigOrigin implements ConfigOrigin {
             return this;
         } else {
             return new SimpleConfigOrigin(this.description, lineNumber, lineNumber, this.originType, this.urlOrNull,
-                    this.resourceOrNull, this.commentsOrNull);
+                    this.resourceOrNull, this.commentsOrNull, this.substitutionPathOrNull);
         }
     }
 
     SimpleConfigOrigin addURL(URL url) {
         return new SimpleConfigOrigin(this.description, this.lineNumber, this.endLineNumber, this.originType,
-                url != null ? url.toExternalForm() : null, this.resourceOrNull, this.commentsOrNull);
+                url != null ? url.toExternalForm() : null, this.resourceOrNull, this.commentsOrNull, this.substitutionPathOrNull);
     }
 
     @Override
@@ -98,7 +100,17 @@ final class SimpleConfigOrigin implements ConfigOrigin {
             return this;
         } else {
             return new SimpleConfigOrigin(this.description, this.lineNumber, this.endLineNumber, this.originType,
-                    this.urlOrNull, this.resourceOrNull, comments);
+                    this.urlOrNull, this.resourceOrNull, comments, this.substitutionPathOrNull);
+        }
+    }
+
+    @Override
+    public SimpleConfigOrigin withSubstitutionPath(String substitutionPath){
+        if (ConfigImplUtil.equalsHandlingNull(substitutionPath, this.substitutionPathOrNull)){
+            return this;
+        } else {
+            return new SimpleConfigOrigin(this.description, this.lineNumber, this.endLineNumber, this.originType,
+                    this.urlOrNull, this.resourceOrNull, this.commentsOrNull, substitutionPath);
         }
     }
 
@@ -215,6 +227,10 @@ final class SimpleConfigOrigin implements ConfigOrigin {
         return lineNumber;
     }
 
+    public String substitutionPath(){
+        return substitutionPathOrNull;
+    }
+
     @Override
     public List<String> comments() {
         if (commentsOrNull != null) {
@@ -231,6 +247,7 @@ final class SimpleConfigOrigin implements ConfigOrigin {
         int mergedStartLine;
         int mergedEndLine;
         List<String> mergedComments;
+        String mergedSubstitutionPath;
 
         OriginType mergedType;
         if (a.originType == b.originType) {
@@ -303,8 +320,15 @@ final class SimpleConfigOrigin implements ConfigOrigin {
                 mergedComments.addAll(b.commentsOrNull);
         }
 
+        if (ConfigImplUtil.equalsHandlingNull(a.substitutionPathOrNull, b.substitutionPathOrNull)){
+            mergedSubstitutionPath = a.substitutionPath();
+        } else {
+            mergedSubstitutionPath = null;
+        }
+
+
         return new SimpleConfigOrigin(mergedDesc, mergedStartLine, mergedEndLine, mergedType, mergedURL,
-                mergedResource, mergedComments);
+                mergedResource, mergedComments, mergedSubstitutionPath);
     }
 
     private static int similarity(SimpleConfigOrigin a, SimpleConfigOrigin b) {
@@ -489,13 +513,14 @@ final class SimpleConfigOrigin implements ConfigOrigin {
         String resourceOrNull = (String) m.get(SerializedField.ORIGIN_RESOURCE);
         @SuppressWarnings("unchecked")
         List<String> commentsOrNull = (List<String>) m.get(SerializedField.ORIGIN_COMMENTS);
+        String substitutionPathOrNull = null;
         // Older versions did not have a resource field, they stuffed it into
         // the description.
         if (originType == OriginType.RESOURCE && resourceOrNull == null) {
             resourceOrNull = description;
         }
         return new SimpleConfigOrigin(description, lineNumber != null ? lineNumber : -1,
-                endLineNumber != null ? endLineNumber : -1, originType, urlOrNull, resourceOrNull, commentsOrNull);
+                endLineNumber != null ? endLineNumber : -1, originType, urlOrNull, resourceOrNull, commentsOrNull, substitutionPathOrNull);
     }
 
     static Map<SerializedField, Object> applyFieldsDelta(Map<SerializedField, Object> base,

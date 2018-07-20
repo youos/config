@@ -31,7 +31,7 @@ final class ConfigNodeSimpleValue extends AbstractConfigNodeValue {
             List<Token> expression = Tokens.getSubstitutionPathExpression(token);
             Path path = PathParser.parsePathExpression(expression.iterator(), token.origin());
             boolean optional = Tokens.getSubstitutionOptional(token);
-
+            
             return new ConfigReference(token.origin(), new SubstitutionExpression(path, optional));
         }
         throw new ConfigException.BugOrBroken("ConfigNodeSimpleValue did not contain a valid value token");

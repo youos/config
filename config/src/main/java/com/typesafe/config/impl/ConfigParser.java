@@ -109,6 +109,10 @@ final class ConfigParser {
                 throw parseError("Expecting a value but got wrong node type: " + n.getClass());
             }
 
+            if (v instanceof ConfigReference){
+                v = v.withOrigin(v.origin().withSubstitutionPath(((ConfigReference) v).expression().toString()));
+            }
+
             if (comments != null && !comments.isEmpty()) {
                 v = v.withOrigin(v.origin().prependComments(new ArrayList<String>(comments)));
                 comments.clear();
@@ -344,7 +348,6 @@ final class ConfigParser {
                     }
                 }
             }
-
             return new SimpleConfigObject(objectOrigin, values);
         }
 
@@ -416,6 +419,7 @@ final class ConfigParser {
                     lastWasNewLine = false;
                 }
             }
+            assert result != null;
             return result;
         }
     }

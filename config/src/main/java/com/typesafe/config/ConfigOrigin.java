@@ -115,4 +115,8 @@ public interface ConfigOrigin {
      * @return the created ConfigOrigin
      */
     public ConfigOrigin withLineNumber(int lineNumber);
+
+    public String substitutionPath();
+
+    public ConfigOrigin withSubstitutionPath(String substitutionPath);
 }

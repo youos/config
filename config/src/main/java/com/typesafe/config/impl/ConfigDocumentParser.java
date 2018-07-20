@@ -245,7 +245,7 @@ final class ConfigDocumentParser {
                 v = new ConfigNodeSimpleValue(t);
             } else if (t == Tokens.OPEN_CURLY) {
                 v = parseObject(true);
-            } else if (t== Tokens.OPEN_SQUARE) {
+            } else if (t == Tokens.OPEN_SQUARE) {
                 v = parseArray();
             } else {
                 throw parseError(addQuoteSuggestion(t.toString(),

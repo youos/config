@@ -5,14 +5,14 @@
 import scalariform.formatter.preferences._
 
 enablePlugins(GitVersioning)
-git.baseVersion := "1.3.0"
+git.baseVersion := "1.3.3"
 
 organization in GlobalScope := "com.typesafe"
 
 scalacOptions in GlobalScope in Compile := Seq("-unchecked", "-deprecation", "-feature")
 scalacOptions in GlobalScope in Test := Seq("-unchecked", "-deprecation", "-feature")
 
-scalaVersion in ThisBuild := "2.10.4"
+scalaVersion in ThisBuild := "2.12.6"
 
 val sonatype = new PublishToSonatype {
   def projectUrl    = "https://github.com/lightbend/config"
@@ -76,10 +76,10 @@ lazy val complexAppJava = proj("config-complex-app-java", file("examples/java/co
 useGpg := true
 
 aggregate in PgpKeys.publishSigned := false
-PgpKeys.publishSigned := (PgpKeys.publishSigned in configLib).value
+//PgpKeys.publishSigned := (PgpKeys.publishSigned in configLib).value
 
 aggregate in PgpKeys.publishLocalSigned := false
-PgpKeys.publishLocalSigned := (PgpKeys.publishLocalSigned in configLib).value
+//PgpKeys.publishLocalSigned := (PgpKeys.publishLocalSigned in configLib).value
 
 val unpublished = Seq(
   // no artifacts in this project

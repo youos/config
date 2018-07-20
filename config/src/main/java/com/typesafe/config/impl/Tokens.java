@@ -291,7 +291,7 @@ final class Tokens {
         final private List<Token> value;
 
         Substitution(ConfigOrigin origin, boolean optional, List<Token> expression) {
-            super(TokenType.SUBSTITUTION, origin);
+            super(TokenType.SUBSTITUTION, origin.withSubstitutionPath(expression.get(0).tokenText()));
             this.optional = optional;
             this.value = expression;
         }
