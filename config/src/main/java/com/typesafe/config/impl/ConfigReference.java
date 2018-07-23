@@ -88,6 +88,10 @@ final class ConfigReference extends AbstractConfigValue implements Unmergeable {
                 ResolveResult<? extends AbstractConfigValue> result = newContext.resolve(resultWithPath.result.value,
                         recursiveResolveSource);
                 v = result.value;
+
+                //Add substitution path to value origin
+                v = v.withOrigin(v.origin().withSubstitutionPath(expr.path().render()));
+
                 newContext = result.context;
             } else {
                 ConfigValue fallback = context.options().getResolver().lookup(expr.path().render());
@@ -97,8 +101,9 @@ final class ConfigReference extends AbstractConfigValue implements Unmergeable {
             if (ConfigImpl.traceSubstitutionsEnabled())
                 ConfigImpl.trace(newContext.depth(),
                         "not possible to resolve " + expr + ", cycle involved: " + e.traceString());
-            if (expr.optional())
+            if (expr.optional()){
                 v = null;
+            }
             else
                 throw new ConfigException.UnresolvedSubstitution(origin(), expr
                         + " was part of a cycle of substitutions involving " + e.traceString(), e);

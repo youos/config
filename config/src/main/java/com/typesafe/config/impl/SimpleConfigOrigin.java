@@ -320,10 +320,11 @@ final class SimpleConfigOrigin implements ConfigOrigin {
                 mergedComments.addAll(b.commentsOrNull);
         }
 
-        if (ConfigImplUtil.equalsHandlingNull(a.substitutionPathOrNull, b.substitutionPathOrNull)){
-            mergedSubstitutionPath = a.substitutionPath();
+        if (ConfigImplUtil.equalsHandlingNull(a.substitutionPathOrNull, b.substitutionPathOrNull)
+                || a.substitutionPathOrNull != null){
+            mergedSubstitutionPath = a.substitutionPathOrNull;
         } else {
-            mergedSubstitutionPath = null;
+            mergedSubstitutionPath = b.substitutionPathOrNull;
         }
 
 
