@@ -118,5 +118,7 @@ public interface ConfigOrigin {
 
     public String substitutionPath();
 
+    public ConfigValue substitutedValue();
+
     public ConfigOrigin withSubstitutionPath(String substitutionPath);
 }

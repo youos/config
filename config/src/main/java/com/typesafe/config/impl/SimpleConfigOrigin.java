@@ -17,6 +17,7 @@ import java.util.Map;
 
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigOrigin;
+import com.typesafe.config.ConfigValue;
 import com.typesafe.config.impl.SerializedConfigValue.SerializedField;
 
 // it would be cleaner to have a class hierarchy for various origin types,
@@ -31,6 +32,7 @@ final class SimpleConfigOrigin implements ConfigOrigin {
     final private String resourceOrNull;
     final private List<String> commentsOrNull;
     final private String substitutionPathOrNull;
+    final private ConfigValue substitutedValue;
 
     protected SimpleConfigOrigin(String description, int lineNumber, int endLineNumber, OriginType originType,
             String urlOrNull, String resourceOrNull, List<String> commentsOrNull, String substitutionPath) {
@@ -44,6 +46,7 @@ final class SimpleConfigOrigin implements ConfigOrigin {
         this.resourceOrNull = resourceOrNull;
         this.commentsOrNull = commentsOrNull;
         this.substitutionPathOrNull = substitutionPath;
+        this.substitutedValue = null;
     }
 
     static SimpleConfigOrigin newSimple(String description) {

@@ -268,11 +268,12 @@ abstract class AbstractConfigValue implements ConfigValue, MergeableValue {
     // this is only overridden to change the return type
     @Override
     public AbstractConfigValue withFallback(ConfigMergeable mergeable) {
+        ConfigValue other = ((MergeableValue) mergeable).toFallbackValue();
+
         if (ignoresFallbacks()) {
+            // TODO @benjo mit withOrigin erweitern um ein Origin, dass den Wert von other enthält
             return this;
         } else {
-            ConfigValue other = ((MergeableValue) mergeable).toFallbackValue();
-
             if (other instanceof Unmergeable) {
                 return mergedWithTheUnmergeable((Unmergeable) other);
             } else if (other instanceof AbstractConfigObject) {
