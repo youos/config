@@ -12,7 +12,7 @@ organization in GlobalScope := "com.typesafe"
 scalacOptions in GlobalScope in Compile := Seq("-unchecked", "-deprecation", "-feature")
 scalacOptions in GlobalScope in Test := Seq("-unchecked", "-deprecation", "-feature")
 
-scalaVersion in ThisBuild := "2.12.6"
+scalaVersion in ThisBuild := "2.10.4"
 
 val sonatype = new PublishToSonatype {
   def projectUrl    = "https://github.com/lightbend/config"
