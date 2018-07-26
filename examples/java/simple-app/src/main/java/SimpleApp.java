@@ -3,7 +3,7 @@ import simplelib.*;
 
 import java.io.File;
 
-class SimpleApp {
+public class SimpleApp {
     public static void main(String[] args) {
 
         Config conf = ConfigFactory.parseFile(new File("examples/java/simple-app/src/main/resources/application.conf"));
