@@ -72,6 +72,8 @@ final class ConfigDelayedMerge extends AbstractConfigValue implements Unmergeabl
             }
         }
 
+        //AbstractConfigValue
+
         // to resolve substitutions, we need to recursively resolve
         // the stack of stuff to merge, and merge the stack so
         // we won't be a delayed merge anymore. If restrictToChildOrNull
@@ -80,8 +82,9 @@ final class ConfigDelayedMerge extends AbstractConfigValue implements Unmergeabl
 
         ResolveContext newContext = context;
         int count = 0;
+        int valueA = 0;
         AbstractConfigValue merged = null;
-        for (AbstractConfigValue end : stack) {
+        for (AbstractConfigValue end : stack){
             // the end value may or may not be resolved already
 
             ResolveSource sourceForEnd;
@@ -92,7 +95,7 @@ final class ConfigDelayedMerge extends AbstractConfigValue implements Unmergeabl
                 // the remainder could be any kind of value, including another
                 // ConfigDelayedMerge
                 AbstractConfigValue remainder = replaceable.makeReplacement(context, count + 1);
-
+                valueA = count;
                 if (ConfigImpl.traceSubstitutionsEnabled())
                     ConfigImpl.trace(newContext.depth(), "remainder portion: " + remainder);
 
@@ -137,6 +140,7 @@ final class ConfigDelayedMerge extends AbstractConfigValue implements Unmergeabl
                 if (merged == null) {
                     merged = resolvedEnd;
                 } else {
+                    valueA = count;
                     if (ConfigImpl.traceSubstitutionsEnabled())
                         ConfigImpl.trace(newContext.depth() + 1, "merging " + merged + " with fallback " + resolvedEnd);
                     merged = merged.withFallback(resolvedEnd);
@@ -149,12 +153,16 @@ final class ConfigDelayedMerge extends AbstractConfigValue implements Unmergeabl
                 ConfigImpl.trace(newContext.depth(), "stack merged, yielding: " + merged);
         }
 
+
+        AbstractConfigValue other = stack.get(valueA);
+        merged = merged.withOrigin(merged.origin().withSubstitutedValue(other));
+
         return ResolveResult.make(newContext, merged);
     }
 
     @Override
     public AbstractConfigValue makeReplacement(ResolveContext context, int skipping) {
-        return ConfigDelayedMerge.makeReplacement(context, stack, skipping);
+         return ConfigDelayedMerge.makeReplacement(context, stack, skipping);
     }
 
     // static method also used by ConfigDelayedMergeObject; end may be null
@@ -171,8 +179,10 @@ final class ConfigDelayedMerge extends AbstractConfigValue implements Unmergeabl
             for (AbstractConfigValue v : subStack) {
                 if (merged == null)
                     merged = v;
-                else
+                else{
                     merged = merged.withFallback(v);
+                    System.out.println(merged.origin().substitutedValue());
+                }
             }
             return merged;
         }

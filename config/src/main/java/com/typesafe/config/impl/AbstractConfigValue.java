@@ -270,18 +270,21 @@ abstract class AbstractConfigValue implements ConfigValue, MergeableValue {
     public AbstractConfigValue withFallback(ConfigMergeable mergeable) {
         ConfigValue other = ((MergeableValue) mergeable).toFallbackValue();
 
+        AbstractConfigValue valueWithOrigin;
         if (ignoresFallbacks()) {
             // TODO @benjo mit withOrigin erweitern um ein Origin, dass den Wert von other enthält
-            return this;
+            valueWithOrigin = this;
         } else {
             if (other instanceof Unmergeable) {
-                return mergedWithTheUnmergeable((Unmergeable) other);
+                valueWithOrigin = mergedWithTheUnmergeable((Unmergeable) other);
             } else if (other instanceof AbstractConfigObject) {
-                return mergedWithObject((AbstractConfigObject) other);
+                valueWithOrigin = mergedWithObject((AbstractConfigObject) other);
             } else {
-                return mergedWithNonObject((AbstractConfigValue) other);
+                valueWithOrigin = mergedWithNonObject((AbstractConfigValue) other);
             }
         }
+        valueWithOrigin = valueWithOrigin.withOrigin(valueWithOrigin.origin().withSubstitutedValue(other));
+        return valueWithOrigin;
     }
 
     protected boolean canEqual(Object other) {

@@ -121,4 +121,6 @@ public interface ConfigOrigin {
     public ConfigValue substitutedValue();
 
     public ConfigOrigin withSubstitutionPath(String substitutionPath);
+
+    public ConfigOrigin withSubstitutedValue(ConfigValue substitutedValue);
 }

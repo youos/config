@@ -12,25 +12,10 @@ import java.time.Duration;
 import java.time.Period;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAmount;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigException;
-import com.typesafe.config.ConfigList;
-import com.typesafe.config.ConfigMemorySize;
-import com.typesafe.config.ConfigMergeable;
-import com.typesafe.config.ConfigObject;
-import com.typesafe.config.ConfigOrigin;
-import com.typesafe.config.ConfigResolveOptions;
-import com.typesafe.config.ConfigValue;
-import com.typesafe.config.ConfigValueType;
+import com.typesafe.config.*;
 
 /**
  * One thing to keep in mind in the future: as Collection-like APIs are added
@@ -1145,6 +1130,55 @@ final class SimpleConfig implements Config, MergeableValue, Serializable {
     public SimpleConfig withValue(String pathExpression, ConfigValue v) {
         Path path = Path.newPath(pathExpression);
         return new SimpleConfig(root().withValue(path, v));
+    }
+
+
+    private Config withChangedDefaultValue(String pathExpression, ConfigValue newValue, Config rootConfig, String rootPath) {
+        Path path = Path.newPath(pathExpression);
+        if (path.first().equals(path.render())){
+            ConfigValue value = root().get(path.render()).toFallbackValue();
+            value = value.withOrigin(value.origin().withSubstitutedValue(newValue));
+            return rootConfig.withoutPath(rootPath).withValue(rootPath, value);
+        }
+        return getObject(path.first()).toConfig().withChangedDefaultValue(path.remainder().render(), newValue, rootConfig, rootPath);
+    }
+
+    
+
+    @Override
+    public Config withChangedDefaultValue(String pathExpression, ConfigValue newValue){
+        return withChangedDefaultValue(pathExpression, newValue, this, pathExpression);
+    }
+
+    private Config withChangedReference(String pathExpression, String reference, Config rootConfig, String rootPath){
+        Path path = Path.newPath(pathExpression);
+        if (path.first().equals(path.render())){
+            ConfigValue value = root().get(path.render()).toFallbackValue();
+            if (value instanceof ConfigDelayedMerge){
+                Collection<AbstractConfigValue> abstractConfigValues = ((ConfigDelayedMerge) value).unmergedValues();
+                AbstractConfigValue replaceReference = null;
+                for (AbstractConfigValue val : abstractConfigValues){
+                    if (val instanceof ConfigReference){
+                        replaceReference = val;
+                        break;
+                    }
+                }
+                if (replaceReference == null){
+                    return rootConfig;
+                } else {
+                    ConfigOrigin origin = ConfigOriginFactory.newSimple().withSubstitutionPath(reference);
+                    SubstitutionExpression subst = new SubstitutionExpression(Path.newPath(reference), true);
+                    value = ((ConfigDelayedMerge) value).replaceChild(replaceReference, new ConfigReference(origin, subst));
+                }
+            }
+            return rootConfig.withoutPath(rootPath).withValue(rootPath, value);
+        }
+        return getObject(path.first()).toConfig().withChangedReference(path.remainder().render(), reference, rootConfig, rootPath);
+    }
+
+    @Override
+    public Config withChangedReference(String pathExpression, String reference) {
+        return withChangedReference(pathExpression, reference, this, pathExpression);
     }
 
     SimpleConfig atKey(ConfigOrigin origin, String key) {

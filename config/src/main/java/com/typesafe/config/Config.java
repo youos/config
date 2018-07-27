@@ -1136,4 +1136,8 @@ public interface Config extends ConfigMergeable {
      * @return the new instance with the new map entry
      */
     Config withValue(String path, ConfigValue value);
+
+    Config withChangedDefaultValue(String path, ConfigValue value);
+
+    Config withChangedReference(String path, String reference);
 }
