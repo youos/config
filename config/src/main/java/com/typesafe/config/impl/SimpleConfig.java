@@ -1132,54 +1132,45 @@ final class SimpleConfig implements Config, MergeableValue, Serializable {
         return new SimpleConfig(root().withValue(path, v));
     }
 
-
-    private Config withChangedDefaultValue(String pathExpression, ConfigValue newValue, Config rootConfig, String rootPath) {
-        Path path = Path.newPath(pathExpression);
-        if (path.first().equals(path.render())){
-            ConfigValue value = root().get(path.render()).toFallbackValue();
-            value = value.withOrigin(value.origin().withSubstitutedValue(newValue));
-            return rootConfig.withoutPath(rootPath).withValue(rootPath, value);
-        }
-        return getObject(path.first()).toConfig().withChangedDefaultValue(path.remainder().render(), newValue, rootConfig, rootPath);
+    @Override
+    public Config withChangedDefaultValue(String pathExpression, ConfigValue newValue) {
+        ConfigValue value = getUnresolvedValue(pathExpression);
+        value = value.withOrigin((value.origin().withSubstitutedValue(newValue)));
+        return withoutPath(pathExpression).withValue(pathExpression, value);
     }
-
-    
 
     @Override
-    public Config withChangedDefaultValue(String pathExpression, ConfigValue newValue){
-        return withChangedDefaultValue(pathExpression, newValue, this, pathExpression);
-    }
-
-    private Config withChangedReference(String pathExpression, String reference, Config rootConfig, String rootPath){
-        Path path = Path.newPath(pathExpression);
-        if (path.first().equals(path.render())){
-            ConfigValue value = root().get(path.render()).toFallbackValue();
-            if (value instanceof ConfigDelayedMerge){
-                Collection<AbstractConfigValue> abstractConfigValues = ((ConfigDelayedMerge) value).unmergedValues();
-                AbstractConfigValue replaceReference = null;
-                for (AbstractConfigValue val : abstractConfigValues){
-                    if (val instanceof ConfigReference){
-                        replaceReference = val;
-                        break;
-                    }
-                }
-                if (replaceReference == null){
-                    return rootConfig;
-                } else {
-                    ConfigOrigin origin = ConfigOriginFactory.newSimple().withSubstitutionPath(reference);
-                    SubstitutionExpression subst = new SubstitutionExpression(Path.newPath(reference), true);
-                    value = ((ConfigDelayedMerge) value).replaceChild(replaceReference, new ConfigReference(origin, subst));
+    public Config withChangedReference(String pathExpression, String reference){
+        ConfigValue value = getUnresolvedValue(pathExpression);
+        if (value instanceof ConfigDelayedMerge){
+            Collection<AbstractConfigValue> abstractConfigValues = ((ConfigDelayedMerge) value).unmergedValues();
+            AbstractConfigValue replaceReference = null;
+            for (AbstractConfigValue val : abstractConfigValues){
+                if (val instanceof ConfigReference){
+                    replaceReference = val;
+                    break;
                 }
             }
-            return rootConfig.withoutPath(rootPath).withValue(rootPath, value);
+            if (replaceReference == null){
+                return this;
+            } else {
+                ConfigOrigin origin = ConfigOriginFactory.newSimple().withSubstitutionPath(reference);
+                SubstitutionExpression subst = new SubstitutionExpression(Path.newPath(reference), true);
+                value = ((ConfigDelayedMerge) value).replaceChild(replaceReference, new ConfigReference(origin, subst));
+            }
+            return withoutPath(pathExpression).withValue(pathExpression, value);
         }
-        return getObject(path.first()).toConfig().withChangedReference(path.remainder().render(), reference, rootConfig, rootPath);
+        return this;
     }
 
-    @Override
-    public Config withChangedReference(String pathExpression, String reference) {
-        return withChangedReference(pathExpression, reference, this, pathExpression);
+    private ConfigValue getUnresolvedValue(String pathExpression){
+        Path path = Path.newPath(pathExpression);
+        if (path.first().equals(path.render())){
+            return root().get(path.render()).toFallbackValue();
+        }
+        return getObject(path.first()).toConfig().getUnresolvedValue(path.remainder().render());
     }
+
 
     SimpleConfig atKey(ConfigOrigin origin, String key) {
         return root().atKey(origin, key);
